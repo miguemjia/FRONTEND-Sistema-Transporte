@@ -5,7 +5,7 @@ import { auditUserGuard } from './core/audit-user.guard';
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   {
-    path: 'Login',
+    path: 'login',
     loadComponent: () => import('./features/Login/Login').then((m) => m.LoginComponent),
   },
   {
