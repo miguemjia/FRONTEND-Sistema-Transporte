@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { UsuarioService } from '../../core/services/usuario.service';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -12,6 +14,8 @@ import { Router } from '@angular/router';
       <section class="login-card">
         <h1>Sistema de Transporte</h1>
         <p>Ingresa para continuar.</p>
+
+        <p *ngIf="error" class="error">{{ error }}</p>
 
         <form (ngSubmit)="onSubmit()">
           <label for="documento">Documento</label>
@@ -71,18 +75,37 @@ import { Router } from '@angular/router';
         background: #0f766e;
         cursor: pointer;
       }
+
+      .error {
+        margin: 0 0 0.75rem;
+        color: #b91c1c;
+      }
     `,
   ],
 })
 export class LoginComponent {
   documento = '';
   contrasena = '';
+  error = '';
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly usuarioService: UsuarioService,
+  ) {}
 
   onSubmit(): void {
-    localStorage.setItem('access_token', 'dev-token');
-    localStorage.setItem('documento', this.documento);
-    this.router.navigateByUrl('/app');
+    this.error = '';
+
+    this.usuarioService.loginAdmin({ documento: this.documento, contrasena: this.contrasena }).subscribe({
+      next: (response) => {
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('role', response.role);
+        localStorage.setItem('documento', this.documento);
+        this.router.navigateByUrl('/app');
+      },
+      error: () => {
+        this.error = 'Documento o contrasena invalidos.';
+      },
+    });
   }
 }
