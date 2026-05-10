@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { environment } from '../../../enviroments/environments';
 import {
@@ -13,6 +14,7 @@ import {
 	LoginRequest,
 	RutaCreate,
 	RutaResponse,
+	RutaPublicResponse,
 	TarjetaCreate,
 	TarjetaResponse,
 	TipoEmpleadoCreate,
@@ -27,7 +29,15 @@ export class UsuarioService {
 	constructor(private readonly http: HttpClient) {}
 
 	login(data: LoginRequest): Observable<TokenResponse> {
-		return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/login`, data);
+		return this.loginAdmin(data).pipe(
+			catchError((error) => {
+				if (error?.status !== 401 && error?.status !== 403) {
+					return throwError(() => error);
+				}
+
+				return this.loginCliente(data);
+			}),
+		);
 	}
 
 	loginAdmin(data: LoginRequest): Observable<TokenResponse> {
@@ -80,8 +90,8 @@ export class UsuarioService {
 		});
 	}
 
-	getRutasPublic(): Observable<RutaResponse[]> {
-		return this.http.get<RutaResponse[]>(`${environment.apiUrl}/rutas/public`);
+	getRutasPublic(): Observable<RutaPublicResponse[]> {
+		return this.http.get<RutaPublicResponse[]>(`${environment.apiUrl}/rutas/public`);
 	}
 
 	createRuta(data: RutaCreate): Observable<RutaResponse> {
@@ -98,6 +108,12 @@ export class UsuarioService {
 
 	getTarjetasCliente(): Observable<TarjetaResponse[]> {
 		return this.http.get<TarjetaResponse[]>(`${environment.apiUrl}/tarjetas/cliente`, {
+			headers: this.authHeaders(),
+		});
+	}
+
+	createTarjetaCliente(): Observable<TarjetaResponse> {
+		return this.http.post<TarjetaResponse>(`${environment.apiUrl}/tarjetas/cliente`, {}, {
 			headers: this.authHeaders(),
 		});
 	}

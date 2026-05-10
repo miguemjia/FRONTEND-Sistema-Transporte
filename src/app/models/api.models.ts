@@ -80,6 +80,14 @@ export interface RutaResponse {
   descripcion: string;
 }
 
+export interface RutaPublicResponse {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  vehiculo_placa?: string | null;
+  vehiculo_marca?: string | null;
+}
+
 // Tarjeta Models
 export interface TarjetaCreate {
   documento_cliente: string;
