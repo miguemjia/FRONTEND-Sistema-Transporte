@@ -209,7 +209,7 @@ export class AdministradoresComponent implements OnInit {
   private loadAdministradores(): void {
     this.loading = true;
     this.usuarioService.getAdministradores().subscribe({
-      next: (administradores) => {
+      next: (administradores: AdministradorResponse[]) => {
         this.administradores = administradores;
         this.loading = false;
         this.cdr.detectChanges();

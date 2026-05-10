@@ -171,7 +171,7 @@ export class TipoEmpleadoComponent implements OnInit {
   private loadTiposEmpleado(): void {
     this.loading = true;
     this.usuarioService.getTiposEmpleado().subscribe({
-      next: (tiposEmpleado) => {
+      next: (tiposEmpleado: TipoEmpleadoResponse[]) => {
         this.tiposEmpleado = tiposEmpleado;
         this.loading = false;
         this.cdr.detectChanges();

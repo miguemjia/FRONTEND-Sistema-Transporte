@@ -26,8 +26,16 @@ import {
 export class UsuarioService {
 	constructor(private readonly http: HttpClient) {}
 
+	login(data: LoginRequest): Observable<TokenResponse> {
+		return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/login`, data);
+	}
+
 	loginAdmin(data: LoginRequest): Observable<TokenResponse> {
 		return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/login/admin`, data);
+	}
+
+	loginCliente(data: LoginRequest): Observable<TokenResponse> {
+		return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/login/cliente`, data);
 	}
 
 	getAdministradores(): Observable<AdministradorResponse[]> {
@@ -72,6 +80,10 @@ export class UsuarioService {
 		});
 	}
 
+	getRutasPublic(): Observable<RutaResponse[]> {
+		return this.http.get<RutaResponse[]>(`${environment.apiUrl}/rutas/public`);
+	}
+
 	createRuta(data: RutaCreate): Observable<RutaResponse> {
 		return this.http.post<RutaResponse>(`${environment.apiUrl}/rutas/`, data, {
 			headers: this.authHeaders(),
@@ -84,8 +96,20 @@ export class UsuarioService {
 		});
 	}
 
+	getTarjetasCliente(): Observable<TarjetaResponse[]> {
+		return this.http.get<TarjetaResponse[]>(`${environment.apiUrl}/tarjetas/cliente`, {
+			headers: this.authHeaders(),
+		});
+	}
+
 	createTarjeta(data: TarjetaCreate): Observable<TarjetaResponse> {
 		return this.http.post<TarjetaResponse>(`${environment.apiUrl}/tarjetas/`, data, {
+			headers: this.authHeaders(),
+		});
+	}
+
+	recargarSaldoCliente(numeroTarjeta: string, monto: number): Observable<{saldo: number}> {
+		return this.http.put<{saldo: number}>(`${environment.apiUrl}/tarjetas/cliente/${numeroTarjeta}/recargar`, { monto }, {
 			headers: this.authHeaders(),
 		});
 	}

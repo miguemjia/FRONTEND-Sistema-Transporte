@@ -13,7 +13,10 @@ export const routes: Routes = [
     canActivate: [auditUserGuard],
     loadComponent: () => import('./features/shell/main-layout').then((m) => m.MainLayoutComponent),
     children: [
-      { path: '', redirectTo: 'cliente', pathMatch: 'full' },
+      {
+        path: '',
+        loadComponent: () => import('./features/shell/app-redirect').then((m) => m.AppRedirectComponent),
+      },
       {
         path: 'administradores',
         loadComponent: () =>
