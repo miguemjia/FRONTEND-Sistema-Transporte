@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 
 import { UsuarioService } from '../../core/services/usuario.service';
-import { RutaResponse, TarjetaResponse } from '../../models/api.models';
+import { RutaPublicResponse, TarjetaResponse } from '../../models/api.models';
 
 @Component({
   selector: 'app-cliente',
@@ -26,6 +26,13 @@ import { RutaResponse, TarjetaResponse } from '../../models/api.models';
           <div class="ruta-card" *ngFor="let ruta of rutas">
             <h3>{{ ruta.nombre }}</h3>
             <p>{{ ruta.descripcion }}</p>
+            <div class="vehiculo-info" *ngIf="ruta.vehiculo_placa && ruta.vehiculo_marca; else sinVehiculo">
+              <strong>Vehículo:</strong>
+              <span>Placa {{ ruta.vehiculo_placa }} - {{ ruta.vehiculo_marca }}</span>
+            </div>
+            <ng-template #sinVehiculo>
+              <p class="sin-vehiculo">Esta ruta no tiene vehículo asignado.</p>
+            </ng-template>
           </div>
         </div>
         <p *ngIf="!loadingRutas && rutas.length === 0">No hay rutas disponibles.</p>
@@ -44,7 +51,12 @@ import { RutaResponse, TarjetaResponse } from '../../models/api.models';
             <button type="button" class="recargar-btn" (click)="seleccionarTarjeta(tarjeta)">Recargar Saldo</button>
           </div>
         </div>
-        <p *ngIf="!loadingTarjetas && tarjetas.length === 0">No tienes tarjetas registradas.</p>
+        <div class="empty-state" *ngIf="!loadingTarjetas && tarjetas.length === 0">
+          <p>No tienes tarjetas registradas.</p>
+          <button type="button" class="secondary action-btn" (click)="registrarTarjeta()" [disabled]="loadingRegistroTarjeta">
+            {{ loadingRegistroTarjeta ? 'Registrando...' : 'Registrar tarjeta' }}
+          </button>
+        </div>
       </div>
 
       <!-- Formulario de Recarga -->
@@ -108,6 +120,20 @@ import { RutaResponse, TarjetaResponse } from '../../models/api.models';
         background: #f9fafb;
       }
 
+      .vehiculo-info {
+        display: grid;
+        gap: 0.25rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .sin-vehiculo {
+        margin-top: 0.75rem;
+        color: #b45309;
+        font-weight: 600;
+      }
+
       .tarjetas-list {
         display: grid;
         gap: 1rem;
@@ -127,6 +153,17 @@ import { RutaResponse, TarjetaResponse } from '../../models/api.models';
         margin: 0.25rem 0 0 0;
         color: #059669;
         font-weight: 600;
+      }
+
+      .empty-state {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
       }
 
       .recargar-btn {
@@ -183,6 +220,10 @@ import { RutaResponse, TarjetaResponse } from '../../models/api.models';
         cursor: pointer;
       }
 
+      .action-btn {
+        white-space: nowrap;
+      }
+
       .error {
         color: #dc2626;
         background: #fef2f2;
@@ -206,13 +247,14 @@ export class ClienteComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   documento = localStorage.getItem('documento') || '';
-  rutas: RutaResponse[] = [];
+  rutas: RutaPublicResponse[] = [];
   tarjetas: TarjetaResponse[] = [];
   tarjetaSeleccionada: TarjetaResponse | null = null;
   montoRecarga = 0;
 
   loadingRutas = false;
   loadingTarjetas = false;
+  loadingRegistroTarjeta = false;
   loadingRecarga = false;
   error = '';
   success = '';
@@ -225,7 +267,7 @@ export class ClienteComponent implements OnInit {
   private loadRutas(): void {
     this.loadingRutas = true;
     this.usuarioService.getRutasPublic().subscribe({
-      next: (rutas: RutaResponse[]) => {
+      next: (rutas: RutaPublicResponse[]) => {
         this.rutas = rutas;
         this.loadingRutas = false;
         this.cdr.detectChanges();
@@ -280,6 +322,27 @@ export class ClienteComponent implements OnInit {
       error: () => {
         this.error = 'No se pudo recargar el saldo.';
         this.loadingRecarga = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  registrarTarjeta(): void {
+    if (this.loadingRegistroTarjeta) return;
+
+    this.loadingRegistroTarjeta = true;
+    this.error = '';
+    this.success = '';
+
+    this.usuarioService.createTarjetaCliente().subscribe({
+      next: (tarjeta) => {
+        this.success = `Tarjeta registrada exitosamente: ${tarjeta.numero_tarjeta}`;
+        this.loadingRegistroTarjeta = false;
+        this.loadTarjetas();
+      },
+      error: () => {
+        this.error = 'No se pudo registrar la tarjeta.';
+        this.loadingRegistroTarjeta = false;
         this.cdr.detectChanges();
       },
     });

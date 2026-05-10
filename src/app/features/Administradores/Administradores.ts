@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 
 import { UsuarioService } from '../../core/services/usuario.service';
-import { AdministradorResponse } from '../../models/api.models';
+import { AdministradorResponse, ClienteResponse } from '../../models/api.models';
 
 @Component({
   selector: 'app-administradores',
@@ -83,6 +83,75 @@ import { AdministradorResponse } from '../../models/api.models';
           </tbody>
         </table>
       </div>
+
+      <section class="section-block">
+        <header class="header-row">
+          <div>
+            <h2>Clientes</h2>
+            <p>Listado de clientes guardados en la base de datos.</p>
+          </div>
+          <button type="button" class="secondary" (click)="toggleClientForm()">
+            {{ showClientForm ? 'Cerrar' : 'Agregar cliente' }}
+          </button>
+        </header>
+
+        <form class="form-card" *ngIf="showClientForm" (ngSubmit)="createCliente()">
+          <div class="grid">
+            <label>
+              Documento
+              <input name="cliente_documento" [(ngModel)]="clientForm.documento" required />
+            </label>
+            <label>
+              Contrasena
+              <input name="cliente_contrasena" type="password" [(ngModel)]="clientForm.contrasena" required />
+            </label>
+            <label>
+              Nombre
+              <input name="cliente_nombre" [(ngModel)]="clientForm.nombre" required />
+            </label>
+            <label>
+              Email
+              <input name="cliente_email" [(ngModel)]="clientForm.email" required />
+            </label>
+            <label>
+              Telefono
+              <input name="cliente_telefono" [(ngModel)]="clientForm.telefono" required />
+            </label>
+            <label>
+              Direccion
+              <input name="cliente_direccion" [(ngModel)]="clientForm.direccion" required />
+            </label>
+          </div>
+          <button type="submit" class="primary">Guardar cliente</button>
+        </form>
+
+        <p *ngIf="loadingClientes">Cargando clientes...</p>
+        <div class="table-wrap" *ngIf="!loadingClientes && !clienteError">
+          <table>
+            <thead>
+              <tr>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Telefono</th>
+                <th>Direccion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cliente of clientes">
+                <td>{{ cliente.documento }}</td>
+                <td>{{ cliente.nombre }}</td>
+                <td>{{ cliente.email }}</td>
+                <td>{{ cliente.telefono }}</td>
+                <td>{{ cliente.direccion }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p *ngIf="clienteError" class="error">{{ clienteError }}</p>
+        <p *ngIf="clienteSuccess" class="success">{{ clienteSuccess }}</p>
+      </section>
     </section>
   `,
   styles: [
@@ -104,6 +173,11 @@ import { AdministradorResponse } from '../../models/api.models';
         border-radius: 12px;
         background: #fff;
         padding: 1rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .section-block {
         display: grid;
         gap: 1rem;
       }
@@ -188,10 +262,15 @@ export class AdministradoresComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   administradores: AdministradorResponse[] = [];
+  clientes: ClienteResponse[] = [];
   loading = true;
+  loadingClientes = true;
   error = '';
+  clienteError = '';
   success = '';
+  clienteSuccess = '';
   showForm = false;
+  showClientForm = false;
   form = {
     documento: '',
     contrasena: '',
@@ -201,9 +280,21 @@ export class AdministradoresComponent implements OnInit {
     direccion: '',
     descripcion: '',
   };
+  clientForm = {
+    documento: '',
+    contrasena: '',
+    nombre: '',
+    email: '',
+    telefono: '',
+    direccion: '',
+  };
 
   toggleForm(): void {
     this.showForm = !this.showForm;
+  }
+
+  toggleClientForm(): void {
+    this.showClientForm = !this.showClientForm;
   }
 
   private loadAdministradores(): void {
@@ -222,8 +313,25 @@ export class AdministradoresComponent implements OnInit {
     });
   }
 
+  private loadClientes(): void {
+    this.loadingClientes = true;
+    this.usuarioService.getClientes().subscribe({
+      next: (clientes: ClienteResponse[]) => {
+        this.clientes = clientes;
+        this.loadingClientes = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.clienteError = 'No se pudieron cargar los clientes.';
+        this.loadingClientes = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   ngOnInit(): void {
     this.loadAdministradores();
+    this.loadClientes();
   }
 
   createAdministrador(): void {
@@ -247,6 +355,31 @@ export class AdministradoresComponent implements OnInit {
       },
       error: () => {
         this.error = 'No se pudo guardar el administrador.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  createCliente(): void {
+    this.clienteError = '';
+    this.clienteSuccess = '';
+
+    this.usuarioService.createCliente({ ...this.clientForm }).subscribe({
+      next: () => {
+        this.clienteSuccess = 'Cliente agregado correctamente.';
+        this.clientForm = {
+          documento: '',
+          contrasena: '',
+          nombre: '',
+          email: '',
+          telefono: '',
+          direccion: '',
+        };
+        this.showClientForm = false;
+        this.loadClientes();
+      },
+      error: () => {
+        this.clienteError = 'No se pudo guardar el cliente.';
         this.cdr.detectChanges();
       },
     });
