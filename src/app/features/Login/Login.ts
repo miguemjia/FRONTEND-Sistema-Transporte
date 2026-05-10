@@ -96,12 +96,13 @@ export class LoginComponent {
   onSubmit(): void {
     this.error = '';
 
-    this.usuarioService.loginAdmin({ documento: this.documento, contrasena: this.contrasena }).subscribe({
+    this.usuarioService.login({ documento: this.documento, contrasena: this.contrasena }).subscribe({
       next: (response) => {
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('role', response.role);
         localStorage.setItem('documento', this.documento);
-        this.router.navigateByUrl('/app');
+        const target = response.role === 'admin' ? '/app/administradores' : '/app/cliente';
+        this.router.navigateByUrl(target);
       },
       error: () => {
         this.error = 'Documento o contrasena invalidos.';

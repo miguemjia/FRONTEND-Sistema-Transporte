@@ -2,6 +2,11 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+interface NavLink {
+  path: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-main-layout',
   standalone: true,
@@ -9,15 +14,9 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
   template: `
     <div class="layout">
       <aside>
-        <h2>Transporte</h2>
+        <h2>Panel {{ isAdmin ? 'Administrador' : 'Cliente' }}</h2>
         <nav>
-          <a routerLink="administradores" routerLinkActive="active">Administradores</a>
-          <a routerLink="cliente" routerLinkActive="active">Cliente</a>
-          <a routerLink="empleado" routerLinkActive="active">Empleado</a>
-          <a routerLink="ruta" routerLinkActive="active">Ruta</a>
-          <a routerLink="tarjeta" routerLinkActive="active">Tarjeta</a>
-          <a routerLink="tipo-empleado" routerLinkActive="active">Tipo Empleado</a>
-          <a routerLink="vehiculos" routerLinkActive="active">Vehiculos</a>
+          <a *ngFor="let link of navLinks" [routerLink]="link.path" routerLinkActive="active">{{ link.label }}</a>
         </nav>
         <button type="button" (click)="logout()">Cerrar sesion</button>
       </aside>
@@ -83,10 +82,37 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
   ],
 })
 export class MainLayoutComponent {
+  private readonly adminLinks: NavLink[] = [
+    { path: 'administradores', label: 'Administradores' },
+    { path: 'empleado', label: 'Empleado' },
+    { path: 'ruta', label: 'Ruta' },
+    { path: 'tarjeta', label: 'Tarjeta' },
+    { path: 'tipo-empleado', label: 'Tipo Empleado' },
+    { path: 'vehiculos', label: 'Vehiculos' },
+  ];
+
+  private readonly clientLinks: NavLink[] = [
+    { path: 'cliente', label: 'Cliente' },
+  ];
+
+  get role(): string | null {
+    return localStorage.getItem('role');
+  }
+
+  get isAdmin(): boolean {
+    return this.role === 'admin';
+  }
+
+  get navLinks(): NavLink[] {
+    return this.isAdmin ? this.adminLinks : this.clientLinks;
+  }
+
   constructor(private readonly router: Router) {}
 
   logout(): void {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('documento');
     this.router.navigateByUrl('/login');
   }
 }

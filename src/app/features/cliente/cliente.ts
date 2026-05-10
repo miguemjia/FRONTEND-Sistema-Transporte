@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 
 import { UsuarioService } from '../../core/services/usuario.service';
-import { ClienteResponse } from '../../models/api.models';
+import { RutaResponse, TarjetaResponse } from '../../models/api.models';
 
 @Component({
   selector: 'app-cliente',
@@ -13,77 +13,72 @@ import { ClienteResponse } from '../../models/api.models';
     <section class="page">
       <header class="header-row">
         <div>
-        <h1>Clientes</h1>
-        <p>Listado de clientes guardados en la base de datos.</p>
+        <h1>Panel de Cliente</h1>
+        <p>Bienvenido, {{ documento }}</p>
         </div>
-        <button type="button" class="secondary" (click)="toggleForm()">
-          {{ showForm ? 'Cerrar' : 'Agregar' }}
-        </button>
       </header>
 
-      <form class="form-card" *ngIf="showForm" (ngSubmit)="createCliente()">
-        <div class="grid">
-          <label>
-            Documento
-            <input name="documento" [(ngModel)]="form.documento" required />
-          </label>
-          <label>
-            Contrasena
-            <input name="contrasena" type="password" [(ngModel)]="form.contrasena" required />
-          </label>
-          <label>
-            Nombre
-            <input name="nombre" [(ngModel)]="form.nombre" required />
-          </label>
-          <label>
-            Email
-            <input name="email" [(ngModel)]="form.email" required />
-          </label>
-          <label>
-            Telefono
-            <input name="telefono" [(ngModel)]="form.telefono" required />
-          </label>
-          <label>
-            Direccion
-            <input name="direccion" [(ngModel)]="form.direccion" required />
-          </label>
+      <!-- Rutas Disponibles -->
+      <div class="section">
+        <h2>Rutas Disponibles</h2>
+        <p *ngIf="loadingRutas">Cargando rutas...</p>
+        <div class="rutas-grid" *ngIf="!loadingRutas && rutas.length > 0">
+          <div class="ruta-card" *ngFor="let ruta of rutas">
+            <h3>{{ ruta.nombre }}</h3>
+            <p>{{ ruta.descripcion }}</p>
+          </div>
         </div>
-        <button type="submit" class="primary">Guardar</button>
-      </form>
+        <p *ngIf="!loadingRutas && rutas.length === 0">No hay rutas disponibles.</p>
+      </div>
 
-      <p *ngIf="loading">Cargando clientes...</p>
+      <!-- Mis Tarjetas -->
+      <div class="section">
+        <h2>Mis Tarjetas</h2>
+        <p *ngIf="loadingTarjetas">Cargando tarjetas...</p>
+        <div class="tarjetas-list" *ngIf="!loadingTarjetas && tarjetas.length > 0">
+          <div class="tarjeta-card" *ngFor="let tarjeta of tarjetas">
+            <div class="tarjeta-info">
+              <strong>Número: {{ tarjeta.numero_tarjeta }}</strong>
+              <p>Saldo: {{ tarjeta.saldo }}</p>
+            </div>
+            <button type="button" class="recargar-btn" (click)="seleccionarTarjeta(tarjeta)">Recargar Saldo</button>
+          </div>
+        </div>
+        <p *ngIf="!loadingTarjetas && tarjetas.length === 0">No tienes tarjetas registradas.</p>
+      </div>
+
+      <!-- Formulario de Recarga -->
+      <div class="section" *ngIf="tarjetaSeleccionada">
+        <h2>Recargar Saldo</h2>
+        <form class="form-card" (ngSubmit)="recargarSaldo()">
+          <div class="grid">
+            <label>
+              Tarjeta Seleccionada
+              <input [value]="tarjetaSeleccionada.numero_tarjeta" readonly />
+            </label>
+            <label>
+              Monto a Recargar
+              <input type="number" name="monto" [(ngModel)]="montoRecarga" min="1" required />
+            </label>
+          </div>
+          <div class="buttons">
+            <button type="submit" class="primary" [disabled]="loadingRecarga">
+              {{ loadingRecarga ? 'Recargando...' : 'Recargar' }}
+            </button>
+            <button type="button" class="secondary" (click)="cancelarRecarga()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
       <p *ngIf="error" class="error">{{ error }}</p>
       <p *ngIf="success" class="success">{{ success }}</p>
-
-      <div class="table-wrap" *ngIf="!loading && !error">
-        <table>
-          <thead>
-            <tr>
-              <th>Documento</th>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Telefono</th>
-              <th>Direccion</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let cliente of clientes">
-              <td>{{ cliente.documento }}</td>
-              <td>{{ cliente.nombre }}</td>
-              <td>{{ cliente.email }}</td>
-              <td>{{ cliente.telefono }}</td>
-              <td>{{ cliente.direccion }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </section>
   `,
   styles: [
     `
       .page {
         display: grid;
-        gap: 1rem;
+        gap: 2rem;
       }
 
       .header-row {
@@ -93,82 +88,115 @@ import { ClienteResponse } from '../../models/api.models';
         align-items: end;
       }
 
+      .section {
+        border: 1px solid #dbe4ea;
+        border-radius: 12px;
+        background: #fff;
+        padding: 1.5rem;
+      }
+
+      .rutas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+      }
+
+      .ruta-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #f9fafb;
+      }
+
+      .tarjetas-list {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .tarjeta-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #f9fafb;
+      }
+
+      .tarjeta-info p {
+        margin: 0.25rem 0 0 0;
+        color: #059669;
+        font-weight: 600;
+      }
+
+      .recargar-btn {
+        background: #059669;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+
+      .recargar-btn:hover {
+        background: #047857;
+      }
+
       .form-card {
         border: 1px solid #dbe4ea;
         border-radius: 12px;
         background: #fff;
         padding: 1rem;
-        display: grid;
-        gap: 1rem;
       }
 
       .grid {
         display: grid;
-        gap: 0.85rem;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
       }
 
-      label {
-        display: grid;
-        gap: 0.35rem;
-        font-weight: 600;
-      }
-
-      input {
-        border: 1px solid #cfd8dc;
-        border-radius: 8px;
-        padding: 0.65rem;
-        font: inherit;
-      }
-
-      .primary,
-      .secondary {
-        border: 0;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        font-weight: 700;
+      .buttons {
+        display: flex;
+        gap: 0.5rem;
       }
 
       .primary {
         background: #0f766e;
-        color: #fff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+      }
+
+      .primary:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
       }
 
       .secondary {
-        background: #e2e8f0;
-        color: #0f172a;
-      }
-
-      .table-wrap {
-        overflow: auto;
-        border: 1px solid #dbe4ea;
-        border-radius: 12px;
-        background: #fff;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      th,
-      td {
-        padding: 0.8rem 0.9rem;
-        text-align: left;
-        border-bottom: 1px solid #e5eef3;
-      }
-
-      th {
-        background: #f8fafc;
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
       }
 
       .error {
-        color: #b91c1c;
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        padding: 0.75rem;
       }
 
       .success {
-        color: #166534;
+        color: #059669;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 6px;
+        padding: 0.75rem;
       }
     `,
   ],
@@ -177,66 +205,90 @@ export class ClienteComponent implements OnInit {
   private readonly usuarioService = inject(UsuarioService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  clientes: ClienteResponse[] = [];
-  loading = true;
+  documento = localStorage.getItem('documento') || '';
+  rutas: RutaResponse[] = [];
+  tarjetas: TarjetaResponse[] = [];
+  tarjetaSeleccionada: TarjetaResponse | null = null;
+  montoRecarga = 0;
+
+  loadingRutas = false;
+  loadingTarjetas = false;
+  loadingRecarga = false;
   error = '';
   success = '';
-  showForm = false;
-  form = {
-    documento: '',
-    contrasena: '',
-    nombre: '',
-    email: '',
-    telefono: '',
-    direccion: '',
-  };
 
-  toggleForm(): void {
-    this.showForm = !this.showForm;
+  ngOnInit(): void {
+    this.loadRutas();
+    this.loadTarjetas();
   }
 
-  private loadClientes(): void {
-    this.loading = true;
-    this.usuarioService.getClientes().subscribe({
-      next: (clientes) => {
-        this.clientes = clientes;
-        this.loading = false;
+  private loadRutas(): void {
+    this.loadingRutas = true;
+    this.usuarioService.getRutasPublic().subscribe({
+      next: (rutas: RutaResponse[]) => {
+        this.rutas = rutas;
+        this.loadingRutas = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.error = 'No se pudieron cargar los clientes.';
-        this.loading = false;
+        this.error = 'No se pudieron cargar las rutas.';
+        this.loadingRutas = false;
         this.cdr.detectChanges();
       },
     });
   }
 
-  ngOnInit(): void {
-    this.loadClientes();
+  private loadTarjetas(): void {
+    this.loadingTarjetas = true;
+    this.usuarioService.getTarjetasCliente().subscribe({
+      next: (tarjetas: TarjetaResponse[]) => {
+        this.tarjetas = tarjetas;
+        this.loadingTarjetas = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar las tarjetas.';
+        this.loadingTarjetas = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
-  createCliente(): void {
+  seleccionarTarjeta(tarjeta: TarjetaResponse): void {
+    this.tarjetaSeleccionada = tarjeta;
+    this.montoRecarga = 0;
+    this.error = '';
+    this.success = '';
+  }
+
+  recargarSaldo(): void {
+    if (!this.tarjetaSeleccionada || this.montoRecarga <= 0) return;
+
+    this.loadingRecarga = true;
     this.error = '';
     this.success = '';
 
-    this.usuarioService.createCliente({ ...this.form }).subscribe({
-      next: () => {
-        this.success = 'Cliente agregado correctamente.';
-        this.form = {
-          documento: '',
-          contrasena: '',
-          nombre: '',
-          email: '',
-          telefono: '',
-          direccion: '',
-        };
-        this.showForm = false;
-        this.loadClientes();
+    this.usuarioService.recargarSaldoCliente(this.tarjetaSeleccionada.numero_tarjeta, this.montoRecarga).subscribe({
+      next: (response) => {
+        this.success = `Saldo recargado exitosamente. Nuevo saldo: $${response.saldo}`;
+        this.tarjetaSeleccionada!.saldo = response.saldo;
+        this.tarjetaSeleccionada = null;
+        this.montoRecarga = 0;
+        this.loadingRecarga = false;
+        this.cdr.detectChanges();
       },
       error: () => {
-        this.error = 'No se pudo guardar el cliente.';
+        this.error = 'No se pudo recargar el saldo.';
+        this.loadingRecarga = false;
         this.cdr.detectChanges();
       },
     });
+  }
+
+  cancelarRecarga(): void {
+    this.tarjetaSeleccionada = null;
+    this.montoRecarga = 0;
+    this.error = '';
+    this.success = '';
   }
 }

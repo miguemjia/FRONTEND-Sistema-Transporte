@@ -179,7 +179,7 @@ export class VehiculosComponent implements OnInit {
   private loadVehiculos(): void {
     this.loading = true;
     this.usuarioService.getVehiculos().subscribe({
-      next: (vehiculos) => {
+      next: (vehiculos: VehiculoResponse[]) => {
         this.vehiculos = vehiculos;
         this.loading = false;
         this.cdr.detectChanges();
