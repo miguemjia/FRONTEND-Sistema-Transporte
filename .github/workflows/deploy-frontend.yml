@@ -6,6 +6,11 @@ on:
       - dev
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -28,7 +33,7 @@ jobs:
         working-directory: FRONTEND-Sistema-Transporte
 
       - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: FRONTEND-Sistema-Transporte/dist/frontend-sistema-transporte
 
@@ -42,4 +47,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
