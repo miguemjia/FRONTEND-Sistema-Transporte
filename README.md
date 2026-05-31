@@ -2,11 +2,11 @@
 
 Aplicación frontend desarrollada con Angular para consumir la API del sistema de transporte.
 
-## Video final pruebas y despliegue
+## Video final y despliegue
 
-https://canva.link/27j41tpjk35yufs
-
-> Reemplaza esta URL con el enlace real del video antes de entregar el repositorio.
+- Video final de pruebas y despliegue: https://canva.link/27j41tpjk35yufs
+- Backend desplegado: https://backend-sistema-transporte.onrender.com/docs#/
+- Frontend desplegado: https://miguemjia.github.io/FRONTEND-Sistema-Transporte/login
 
 ## Requisitos
 
