@@ -2,9 +2,9 @@
 
 Aplicación frontend desarrollada con Angular para consumir la API del sistema de transporte.
 
-## Video
+## Video final pruebas y despliegue
 
-Enlace al video explicativo: [https://example.com/video-explicativo](https://youtu.be/cHr6kj0vJOs)
+https://canva.link/27j41tpjk35yufs
 
 > Reemplaza esta URL con el enlace real del video antes de entregar el repositorio.
 
